@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
 
 // Setting rendener, scene and camera
 const scene = new THREE.Scene();
@@ -10,8 +9,6 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-const controls = new OrbitControls(camera, renderer.domElement);
-
 const keys = {
   w: false, a: false, s: false, d: false
 };
@@ -20,11 +17,14 @@ window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
 camera.position.y = 50;
-camera.position.x = 50;
-camera.position.z = 35;
+camera.position.x = 75;
+camera.position.z = 45;
+camera.position.set(75, 50, 50);
+
+const environment = createEnvironment();
+scene.add(environment);
 
 const car = createCar();
-car.rotation.y = 11 * Math.PI / 12;
 scene.add(car);
 
 const cameraOffset = new THREE.Vector3().subVectors(camera.position, car.position);
@@ -36,13 +36,51 @@ function animate( time ) {
 
     camera.position.copy(car.position).add(cameraOffset);
     camera.lookAt(car.position);
-
-    controls.target.copy(car.position);
-    controls.update();
     
     renderer.render( scene, camera );
 }
 renderer.setAnimationLoop( animate );
+
+function createEnvironment() {
+    const environment = new THREE.Group();
+
+    const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(2000, 2000),
+        new THREE.MeshBasicMaterial({ color: 0x8fbf7a })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    environment.add(ground);
+
+    const road = new THREE.Mesh(
+        new THREE.PlaneGeometry(2000, 80),
+        new THREE.MeshBasicMaterial({
+            color: 0x303030,
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1
+        })
+    );
+    road.rotation.x = -Math.PI / 2;
+    road.position.y = 0;
+    environment.add(road);
+
+    const stripeGeometry = new THREE.PlaneGeometry(24, 4);
+    const stripeMaterial = new THREE.MeshBasicMaterial({
+        color: 0xf7f3a1,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
+    });
+
+    for (let x = -900; x <= 900; x += 60) {
+        const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+        stripe.rotation.x = -Math.PI / 2;
+        stripe.position.set(x, 0.05, 0);
+        environment.add(stripe);
+    }
+
+    return environment;
+}
 
 function createWheels() {
     const tireGeometry = new THREE.TorusGeometry( 5, 2.5, 16, 100 );
@@ -141,7 +179,8 @@ function createCar() {
     );
     cabin.position.x = -6;
     cabin.position.y = 25.5;
-    car.add(cabin);
+    car.add(cabin);  
+    car.rotation.y = Math.PI;
 
     return car;
 }
