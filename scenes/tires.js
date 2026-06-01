@@ -16,9 +16,6 @@ const keys = {
 window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
-camera.position.y = 50;
-camera.position.x = 75;
-camera.position.z = 45;
 camera.position.set(75, 50, 50);
 
 const environment = createEnvironment();
@@ -27,15 +24,14 @@ scene.add(environment);
 const car = createCar();
 scene.add(car);
 
-const cameraOffset = new THREE.Vector3().subVectors(camera.position, car.position);
+const cameraOffset = new THREE.Vector3(-80, 50, 20);
+
+const speedStraight = 0.5;
+const speedRotation = 0.005;
 
 function animate( time ) {
-    const speed = 0.5;
-    if (keys.w) car.position.x -= speed;
-    if (keys.s) car.position.x += speed;
-
-    camera.position.copy(car.position).add(cameraOffset);
-    camera.lookAt(car.position);
+    trackMovement();
+    syncCameraCar();
     
     renderer.render( scene, camera );
 }
@@ -183,4 +179,25 @@ function createCar() {
     car.rotation.y = Math.PI;
 
     return car;
+}
+
+function trackMovement() {
+    if (keys.w) car.translateX(speedStraight);
+    if (keys.s) car.translateX(-speedStraight);
+
+    if (keys.a) {
+        car.rotation.y += speedRotation;
+        car.translateX(speedStraight);
+    }
+    if (keys.d) {
+        car.rotation.y -= speedRotation;
+        car.translateX(speedStraight);
+    }
+}
+
+function syncCameraCar() {
+    const cameraPosition = cameraOffset.clone();
+    car.localToWorld(cameraPosition);
+    camera.position.copy(cameraPosition);
+    camera.lookAt(car.position);
 }
