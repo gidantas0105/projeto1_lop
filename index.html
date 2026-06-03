@@ -4,21 +4,67 @@
     <meta charset="utf-8">
     <title>Projeto 1 - LOP</title>
     <style>
-      body { margin: 0; 
-            #info {
-                position: absolute;
-                top: 10px;
-                width: 100%;
-                text-align: center;
-                z-index: 100;
-                display: block;
-                color: white;
-            }
-        }
+      body {
+        margin: 0;
+      }
+
+      #info {
+        position: absolute;
+        top: 10px;
+        width: 100%;
+        text-align: center;
+        z-index: 100;
+        display: block;
+        color: white;
+      }
+
+      .video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5rem;
+        height: 5rem;
+        z-index: 100;
+      }
+
+      #output {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 100;
+        width: 160px;   /* or whatever preview size you want */
+        height: 120px;  /* keep 4:3 ratio to match 640x480 */
+        pointer-events: none;
+      }
+
+      #threeContainer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 0;
+      }
     </style>
   </head>
   <body>
     <h2 id="info">Projeto 1 - LOP</h2>
-    <script type="module" src="./scenes/tires.js"></script>
+    <div class='flex'>
+      <div id='main' style='display:none'>
+          <video id="video" playsinline style=" -moz-transform: scaleX(-1);
+          -o-transform: scaleX(-1);
+          -webkit-transform: scaleX(-1);
+          transform: scaleX(-1);
+          display: none;
+          ">
+          </video>
+          <canvas id="output"></canvas>
+      </div>  
+    </div>
+
+    <div id='threeContainer' class='flex'>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/97/three.js"></script>
+    <script src="https://unpkg.com/@tensorflow/tfjs"></script>
+    <script src="https://unpkg.com/@tensorflow-models/posenet"></script>
+    <script src="./scenes/tires.js"></script>
   </body>
 </html>
