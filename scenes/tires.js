@@ -1,33 +1,43 @@
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import * as tf from 'https://unpkg.com/@tensorflow/tfjs';
+import * as handpose from 'https://cdn.jsdelivr.net/npm/@tensorflow-models/handpose@0.0.7/+esm';
 
 // Setting rendener, scene and camera
 const scene = new THREE.Scene();
 scene.background = new THREE.Color( 0xadd8e6 );
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+camera.position.set(75, 50, 50);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
+// Constants
 const keys = {
   w: false, a: false, s: false, d: false
 };
 
+const gesture = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false
+};
+
+const cameraOffset = new THREE.Vector3(-80, 50, 20);
+
+const speedStraight = 0.75;
+const speedRotation = 0.003;
+
 window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
-camera.position.set(75, 50, 50);
-
+// Building the scene
 const environment = createEnvironment();
 scene.add(environment);
 
 const car = createCar();
 scene.add(car);
-
-const cameraOffset = new THREE.Vector3(-80, 50, 20);
-
-const speedStraight = 0.5;
-const speedRotation = 0.005;
 
 function animate( time ) {
     trackMovement();
@@ -35,7 +45,6 @@ function animate( time ) {
     
     renderer.render( scene, camera );
 }
-renderer.setAnimationLoop( animate );
 
 function createEnvironment() {
     const environment = new THREE.Group();
@@ -182,17 +191,17 @@ function createCar() {
 }
 
 function trackMovement() {
-    if (keys.w) car.translateX(speedStraight);
-    if (keys.s) car.translateX(-speedStraight);
+  if (gesture.forward || keys.w) car.translateX(speedStraight);
+  if (gesture.backward || keys.s) car.translateX(-speedStraight);
 
-    if (keys.a) {
-        car.rotation.y += speedRotation;
-        car.translateX(speedStraight);
-    }
-    if (keys.d) {
-        car.rotation.y -= speedRotation;
-        car.translateX(speedStraight);
-    }
+  if (gesture.left || keys.a) {
+    car.rotation.y += speedRotation;
+    car.translateX(speedStraight * 0.5);
+  }
+  if (gesture.right || keys.d) {
+    car.rotation.y -= speedRotation;
+    car.translateX(speedStraight * 0.5);
+  }
 }
 
 function syncCameraCar() {
@@ -201,3 +210,75 @@ function syncCameraCar() {
     camera.position.copy(cameraPosition);
     camera.lookAt(car.position);
 }
+
+async function setupCamera() {
+  const video = document.getElementById('video');
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: { facingMode: 'user', width: 640, height: 480 }
+  });
+  video.srcObject = stream;
+  return new Promise(resolve => {
+    video.onloadedmetadata = () => resolve(video);
+  });
+}
+
+// Contagem dos dedos levantados (Ponta do dedo mais alta que a base do dedo)
+function countFingers(landmarks) {
+  const tips  = [8, 12, 16, 20]; // Índices dos pontos finais dos dedos (exceto o polegar) em handPose
+  const bases = [5,  9, 13, 17]; // Índices dos pontos de base dos dedos (exceto o polegar) em handPose
+  let count = 0;
+  for (let i = 0; i < 4; i++) {
+    if (landmarks[tips[i]][1] < landmarks[bases[i]][1]) count++;
+  }
+  return count;
+}
+
+async function gestureLoop(video, handModel) {
+  const hands = await handModel.estimateHands(video);
+
+  // Reseta gestos a cada frame
+  gesture.forward = gesture.backward = gesture.left = gesture.right = false;
+
+  for (const hand of hands) {
+    const lm = hand.landmarks;
+    const wristX = lm[0][0];
+    const isLeft = wristX > video.videoWidth / 2; // Pulso na metade esqueda do vídeo? => Mão esquerda
+    const fingers = countFingers(lm);
+
+    if (isLeft) {
+      if (fingers === 1) gesture.forward = true;
+      if (fingers === 2) gesture.backward = true;
+    } else {
+      if (fingers === 1) gesture.left = true;
+      if (fingers === 2) gesture.right = true;
+    }
+  }
+
+  // Desenha o vídeo invertido (espelhado) para aparecer na tela
+  const canvas = document.getElementById('output');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 640;
+  canvas.height = 480;
+  ctx.save();
+  ctx.scale(-1, 1);
+  ctx.translate(-640, 0);
+  ctx.drawImage(video, 0, 0, 640, 480);
+  ctx.restore();
+
+  requestAnimationFrame(() => gestureLoop(video, handModel));
+}
+
+async function initGestures() {
+  const video = await setupCamera();
+  video.play();
+  const handModel = await handpose.load();
+  gestureLoop(video, handModel);
+}
+
+async function start() {
+  await initGestures();         // wait for camera + HandPose to be ready
+  renderer.setAnimationLoop(animate); // only start rendering once gestures are live
+}
+
+start();
