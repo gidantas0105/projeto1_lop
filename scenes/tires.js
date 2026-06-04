@@ -6,10 +6,10 @@ import * as handpose from 'https://cdn.jsdelivr.net/npm/@tensorflow-models/handp
 const scene = new THREE.Scene();
 scene.background = new THREE.Color( 0xadd8e6 );
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+camera.position.set(75, 50, 50);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
 
 // Constants
 const keys = {
@@ -201,6 +201,18 @@ function trackMovement() {
     car.rotation.y -= speedRotation;
     car.translateX(speedStraight * 0.5);
   }
+}
+
+function trackCameraMovement(x, y, z) {
+    const targetRotationY = Math.atan2(x, z);
+    const targetRotationX = Math.atan2(y, z);
+
+    car.rotation.y += (targetRotationY - car.rotation.y) * 0.05;
+    car.rotation.x += (targetRotationX - car.rotation.x) * 0.05;
+
+    const distance = Math.sqrt(x * x + y * y + z * z);
+    const targetOffsetZ = -Math.min(100, distance * 1.5);
+    cameraOffset.z += (targetOffsetZ - cameraOffset.z) * 0.05;
 }
 
 function syncCameraCar() {
