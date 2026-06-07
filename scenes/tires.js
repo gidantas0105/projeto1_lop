@@ -10,6 +10,7 @@ camera.position.set(75, 50, 50);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild(renderer.domElement);
 
 // Constants
 const keys = {
@@ -25,8 +26,8 @@ const gesture = {
 
 const cameraOffset = new THREE.Vector3(-80, 50, 20);
 
-const speedStraight = 0.75;
-const speedRotation = 0.003;
+const speedStraight = 1;
+const speedRotation = 0.02;
 
 window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
@@ -55,18 +56,15 @@ function createEnvironment() {
     ground.rotation.x = -Math.PI / 2;
     environment.add(ground);
 
-    const road = new THREE.Mesh(
-        new THREE.PlaneGeometry(2000, 80),
-        new THREE.MeshBasicMaterial({
-            color: 0x303030,
-            polygonOffset: true,
-            polygonOffsetFactor: 1,
-            polygonOffsetUnits: 1
-        })
-    );
-    road.rotation.x = -Math.PI / 2;
-    road.position.y = 0;
-    environment.add(road);
+    const roomSize = 2000;
+    const wallHeight = 100;
+    const cornerSize = 5;
+
+    const roomMaterial = new THREE.MeshBasicMaterial({ color: 0xC9B7B1, side: THREE.BackSide });
+    const room = new THREE.Mesh(new THREE.BoxGeometry(roomSize + cornerSize, wallHeight, roomSize + cornerSize), roomMaterial);
+    room.position.set(0, wallHeight / 2, 0);
+    room.position.y = 0.01; 
+    environment.add(room);
 
     const stripeGeometry = new THREE.PlaneGeometry(24, 4);
     const stripeMaterial = new THREE.MeshBasicMaterial({
