@@ -58,10 +58,9 @@ function createEnvironment() {
 
     const roomSize = 2000;
     const wallHeight = 100;
-    const cornerSize = 5;
 
     const roomMaterial = new THREE.MeshBasicMaterial({ color: 0xC9B7B1, side: THREE.BackSide });
-    const room = new THREE.Mesh(new THREE.BoxGeometry(roomSize + cornerSize, wallHeight, roomSize + cornerSize), roomMaterial);
+    const room = new THREE.Mesh(new THREE.BoxGeometry(roomSize, wallHeight, roomSize), roomMaterial);
     room.position.set(0, wallHeight / 2, 0);
     room.position.y = 0.01; 
     environment.add(room);
@@ -199,6 +198,10 @@ function trackMovement() {
     car.rotation.y -= speedRotation;
     car.translateX(speedStraight * 0.5);
   }
+
+  const limit = (2000 / 2) - (60 / 2); // Dimensões do ambiente - metade do tamanho do carro
+  car.position.x = Math.max(-limit, Math.min(limit, car.position.x));
+  car.position.z = Math.max(-limit, Math.min(limit, car.position.z));
 }
 
 function trackCameraMovement(x, y, z) {
