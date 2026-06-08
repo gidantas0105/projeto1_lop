@@ -29,6 +29,8 @@ const cameraOffset = new THREE.Vector3(-80, 50, 20);
 const speedStraight = 1;
 const speedRotation = 0.02;
 
+let coinsCollected = 0;
+
 window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
@@ -41,6 +43,7 @@ scene.add(car);
 
 function animate( time ) {
     trackMovement();
+    trackCoinsCollecting();
     syncCameraCar();
     
     renderer.render( scene, camera );
@@ -80,7 +83,29 @@ function createEnvironment() {
         environment.add(stripe);
     }
 
+    const coins = createCoins();
+    coins.forEach(coin => environment.add(coin));
+
+    environment.userData.coins = coins;
     return environment;
+}
+
+function createCoins() {
+    const coinGeometry = new THREE.CylinderGeometry(5, 5, 1, 32);
+    const coinMaterial = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+
+    const coins = [];
+    for (let i = 0; i < 20; i++) {
+        const coin = new THREE.Mesh(coinGeometry, coinMaterial);
+        coin.rotation.x = Math.PI / 2;
+        coin.position.set(
+            (Math.random() - 0.5) * 1800,
+            6, // Raio da moeda + 1
+            (Math.random() - 0.5) * 1800
+        );
+        coins.push(coin);
+    }
+    return coins;
 }
 
 function createWheels() {
@@ -202,6 +227,19 @@ function trackMovement() {
   const limit = (2000 / 2) - (60 / 2); // Dimensões do ambiente - metade do tamanho do carro
   car.position.x = Math.max(-limit, Math.min(limit, car.position.x));
   car.position.z = Math.max(-limit, Math.min(limit, car.position.z));
+}
+
+function trackCoinsCollecting() {
+  const coins = environment.userData.coins
+  coins.forEach((coin, index) => {
+    if (coin.position.distanceTo(car.position) < 20) {
+      environment.remove(coin);
+      coins.splice(index, 1);
+
+      coinsCollected++;
+      document.getElementById('coins-count').textContent = coinsCollected;
+    }
+  })
 }
 
 function trackCameraMovement(x, y, z) {

@@ -15,6 +15,17 @@
         color: white;
       }
 
+      #coins-collected{
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    text-align: right;
+        width: 100%;
+        z-index: 100;
+        color: white;
+      }
+
+
       #output {
         position: absolute;
         top: 10px;
@@ -32,6 +43,7 @@
   </head>
   <body>
     <h2 id="info">Projeto 1 - LOP</h2>
+    <h2 id="coins-collected">Moedas Coletadas: <span id="coins-count">0</span></h2>
     <video id="video" playsinline></video>
     <canvas id="output"></canvas>
     <script type="module" src="./scenes/tires.js"></script>
